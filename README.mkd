@@ -235,3 +235,41 @@ To use the `find_response.sh` script, follow these steps:
    - If the subdomain is found in `<output-directory>/index`, the script will output the contents of the first matching file path.
 
 This should execute the script and provide the content of the first match found in the `index` file.
+
+---
+
+## Extracting `meg` Output to TSV with the Python Script
+
+The `extract_information_from_meg_result` Python script processes the output of the `meg` tool and converts it into a structured TSV format for easier analysis. It extracts useful headers (e.g., `Content-Type`, `Content-Length`, `Server`, `Location`) and handles errors. Here's how to use the script:
+
+1. **Prepare the Output Directory**:  
+   Ensure the `meg` output files (e.g., `index`, `error`) are available in the desired directory (default: `out`).
+
+2. **Run the Script**:  
+   Use the script with the `--source_dir` argument to specify the directory containing the `meg` output files:
+
+   ```bash
+   python extract_information_from_meg_result.py --source_dir <output_directory>
+   ```
+
+   If `--source_dir` is not specified, it defaults to `out`.
+
+3. **Generated Files**:
+
+   - **`subdomains_with_response.tsv`**: A TSV file containing subdomains, their response status, types (`http` or `https`), and extracted headers.
+   - **`subdomains_errors.tsv`**: A TSV file listing subdomains that failed, along with their corresponding error statuses.
+
+4. **Example Command**:
+   If the `meg` output is in the default `out` directory:
+
+   ```bash
+   python extract_information_from_meg_result.py
+   ```
+
+   For a custom directory:
+
+   ```bash
+   python extract_information_from_meg_result.py --source_dir custom_output
+   ```
+
+This script provides a structured view of the `meg` results, making it easier to analyze and debug web requests.
