@@ -41,22 +41,24 @@ func (s saveStatusArgs) Includes(search int) bool {
 }
 
 type config struct {
-	body           string
-	concurrency    int
-	delay          int
-	headers        headerArgs
-	followLocation bool
-	method         string
-	saveStatus     saveStatusArgs
-	timeout        int
-	verbose        bool
+	body            string
+	customUserAgent string
+	concurrency     int
+	delay           int
+	headers         headerArgs
+	followLocation  bool
+	method          string
+	saveStatus      saveStatusArgs
+	timeout         int
+	verbose         bool
 
 	paths     string
 	hosts     string
 	output    string
 	noHeaders bool
 
-	requester requester
+	requester  requester
+	maxRetries int
 }
 
 func processArgs() config {
@@ -80,6 +82,11 @@ func processArgs() config {
 	var headers headerArgs
 	flag.Var(&headers, "header", "")
 	flag.Var(&headers, "H", "")
+
+	// customUserAgent param
+	customUserAgent := ""
+	flag.StringVar(&customUserAgent, "useragent", "", "")
+	flag.StringVar(&customUserAgent, "u", "", "")
 
 	// follow location param
 	followLocation := false
@@ -115,6 +122,10 @@ func processArgs() config {
 	flag.BoolVar(&verbose, "verbose", false, "")
 	flag.BoolVar(&verbose, "v", false, "")
 
+	maxRetries := 3
+	flag.IntVar(&maxRetries, "maxretries", 3, "")
+	flag.IntVar(&maxRetries, "m", 3, "")
+
 	flag.Parse()
 
 	// paths might be in a file, or it might be a single value
@@ -142,20 +153,22 @@ func processArgs() config {
 	}
 
 	return config{
-		body:           body,
-		concurrency:    concurrency,
-		delay:          delay,
-		headers:        headers,
-		followLocation: followLocation,
-		method:         method,
-		saveStatus:     saveStatus,
-		timeout:        timeout,
-		requester:      requesterFn,
-		verbose:        verbose,
-		paths:          paths,
-		hosts:          hosts,
-		output:         output,
-		noHeaders:      noHeaders,
+		body:            body,
+		customUserAgent: customUserAgent,
+		concurrency:     concurrency,
+		delay:           delay,
+		headers:         headers,
+		followLocation:  followLocation,
+		method:          method,
+		saveStatus:      saveStatus,
+		timeout:         timeout,
+		requester:       requesterFn,
+		verbose:         verbose,
+		paths:           paths,
+		hosts:           hosts,
+		output:          output,
+		noHeaders:       noHeaders,
+		maxRetries:      maxRetries,
 	}
 }
 
@@ -169,6 +182,7 @@ func init() {
 		h += "Options:\n"
 		h += "  -b, --body <val>           Set the request body\n"
 		h += "  -c, --concurrency <val>    Set the concurrency level (default: 20)\n"
+		h += "  -u, --useragent <val>      User agent (optional)\n"
 		h += "  -d, --delay <millis>       Milliseconds between requests to the same host (default: 5000)\n"
 		h += "  -H, --header <header>      Send a custom HTTP header\n"
 		h += "  -L, --location             Follow redirects / location header\n"
@@ -176,12 +190,14 @@ func init() {
 		h += "  -s, --savestatus <status>  Save only responses with specific status code\n"
 		h += "  -t, --timeout <millis>     Set the HTTP timeout (default: 10000)\n"
 		h += "  -v, --verbose              Verbose mode\n"
-		h += "  -X, --method <method>      HTTP method (default: GET)\n\n"
+		h += "  -X, --method <method>      HTTP method (default: GET)\n"
+		h += "  -m, --maxretries <val>       Max number of retry when a request fails (default: 3)\n\n"
 
 		h += "Defaults:\n"
 		h += "  pathsFile: ./paths\n"
 		h += "  hostsFile: ./hosts\n"
 		h += "  outputDir:  ./out\n\n"
+		h += "  errorDir:  ./error\n\n"
 
 		h += "Paths file format:\n"
 		h += "  /robots.txt\n"

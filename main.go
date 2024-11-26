@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	userAgent = "Mozilla/5.0 (compatible; meg/0.2; +https://github.com/tomnomnom/meg)"
+	userAgent = "Mozilla/5.0 (compatible; howhow06-meg/0.2)"
 
 	// argument defaults
 	defaultPathsFile = "./paths"
@@ -56,6 +56,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	// create the error file
+	errorFilePath := filepath.Join(c.output, "error")
+	errorFile, err := os.OpenFile(errorFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to open error file: %s\n", err)
+		os.Exit(1)
+	}
+
 	// set up a rate limiter
 	rl := newRateLimiter(time.Duration(c.delay * 1000000))
 
@@ -71,8 +79,24 @@ func main() {
 
 		go func() {
 			for req := range requests {
-				rl.Block(req.Hostname())
-				responses <- c.requester(req)
+				var res response
+
+				for attempt := 0; attempt <= c.maxRetries; attempt++ {
+					if attempt > 0 {
+						fmt.Printf("Retry %d/%d for URL: %s\n", attempt, c.maxRetries, req.URL())
+					}
+					rl.Block(req.Hostname()) // Rate limiter
+					res = c.requester(req)
+
+					if res.err == nil {
+						break
+					}
+
+					if attempt < c.maxRetries {
+						time.Sleep(2 * time.Second) // Backoff between retries
+					}
+				}
+				responses <- res
 			}
 			wg.Done()
 		}()
@@ -90,6 +114,11 @@ func main() {
 
 			if res.err != nil {
 				fmt.Fprintf(os.Stderr, "request failed: %s\n", res.err)
+				// Write the failed request URL to the error file
+				_, err = fmt.Fprintf(errorFile, "%s\t%s\n", res.request.URL(), res.err)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "failed to write to error file: %s\n", err)
+				}
 				continue
 			}
 
@@ -117,6 +146,10 @@ func main() {
 			u, err := url.Parse(host)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "failed to parse host: %s\n", err)
+				_, err = fmt.Fprintf(errorFile, "%s\t%s\n", host, err)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "failed to write to error file: %s\n", err)
+				}
 				continue
 			}
 			prefixedPath := u.Path + path
@@ -127,13 +160,14 @@ func main() {
 			host = u.String()
 
 			requests <- request{
-				method:         c.method,
-				host:           host,
-				path:           prefixedPath,
-				headers:        c.headers,
-				followLocation: c.followLocation,
-				body:           c.body,
-				timeout:        time.Duration(c.timeout * 1000000),
+				method:          c.method,
+				host:            host,
+				path:            prefixedPath,
+				headers:         c.headers,
+				followLocation:  c.followLocation,
+				body:            c.body,
+				timeout:         time.Duration(c.timeout * 1000000),
+				customUserAgent: c.customUserAgent,
 			}
 		}
 	}

@@ -1,5 +1,6 @@
-# meg
+# meg (fork)
 
+This repo is a fork to [meg](https://github.com/tomnomnom/meg) by Tom Hudson.
 meg is a tool for fetching lots of URLs but still being 'nice' to servers.
 
 It can be used to fetch many paths for many hosts; fetching one path
@@ -8,34 +9,50 @@ for all hosts before moving on to the next path and repeating.
 You get lots of results quickly, but non of the individual hosts get
 flooded with traffic.
 
+## About this fork
+
+This fork of introduces several enhanced features to improve functionality and usability:
+
+1. **Retry Mechanism**: Added support for retrying failed requests, default to 3 max retries, configurable via the `-m` or `--maxretries` argument. Users can specify the number of retries for failed requests, with a default 2-second delay between each retry.
+2. **Custom User-Agent**: Added the ability to specify a custom User-Agent string using the `-u` or `--useragent` argument, allowing for greater flexibility in request customization.
+3. **Error Logging**: All failed requests are now logged into a dedicated `error` file within the output directory, making it easier to debug and analyze failed requests.
+
+These extensions make the tool more robust and adaptable to different use cases, improving the user experience while maintaining compatibility with the original functionality.
+
 ## Install
 
-meg is written in Go and has no run-time dependencies. If you have Go 1.9
-or later installed and configured you can install meg with `go install`:
+### Install by Building the Project Locally
+
+1. **Clone the Repository**:  
+   Clone this forked repository to your local machine:
+
+   ```bash
+   git clone https://github.com/HowHow06/meg.git
+   cd meg
+   ```
+
+2. **Build the Binary**:  
+   Build the `meg` binary using the Go toolchain:
+
+   ```bash
+   go build -o meg
+   ```
+
+3. **Run the Tool**:  
+   You can now use the `meg` binary directly:
+   ```bash
+   ./meg -h
+   ```
+
+Ensure you have [Go](https://golang.org/doc/install) installed and configured on your system before proceeding.
+
+### Install by Directly Installing with Go
+
+If you have Go 1.9 or later installed and configured you can install meg with `go install`:
 
 ```
-▶ go install github.com/tomnomnom/meg@latest
+▶ go install github.com/howhow06/meg@latest
 ```
-
-Or [download a binary](https://github.com/tomnomnom/meg/releases) and
-put it somewhere in your `$PATH` (e.g. in `/usr/bin/`).
-
-### Install Errors
-
-If you see an error like this it means your version of Go is too old:
-
-```
-# github.com/tomnomnom/rawhttp
-/root/go/src/github.com/tomnomnom/rawhttp/request.go:102: u.Hostname undefined (
-type *url.URL has no field or method Hostname)
-/root/go/src/github.com/tomnomnom/rawhttp/request.go:103: u.Port undefined (type
- *url.URL has no field or method Port)
- /root/go/src/github.com/tomnomnom/rawhttp/request.go:259: undefined: x509.System
- CertPool
-```
-
-You should either update your version of Go, or use a binary release
-for your platform.
 
 ## Basic Usage
 
@@ -55,7 +72,7 @@ https://example.com
 http://example.net
 ```
 
-`meg` will request each *path* for every *host*:
+`meg` will request each _path_ for every _host_:
 
 ```
 ▶ meg --verbose paths hosts
@@ -67,62 +84,6 @@ out/example.com/20bc94a296f17ce7a4e2daa2946d0dc12128b3f1 http://example.com/.wel
 ...
 ```
 
-And save the output in a directory called `./out`:
-
-```
-▶ head -n 20 ./out/example.com/45ed6f717d44385c5e9c539b0ad8dc71771780e0
-http://example.com/robots.txt
-
-> GET /robots.txt HTTP/1.1
-> Host: example.com
-
-< HTTP/1.1 404 Not Found
-< Expires: Sat, 06 Jan 2018 01:05:38 GMT
-< Server: ECS (lga/13A2)
-< Accept-Ranges: bytes
-< Cache-Control: max-age=604800
-< Content-Type: text/*
-< Content-Length: 1270
-< Date: Sat, 30 Dec 2017 01:05:38 GMT
-< Last-Modified: Sun, 24 Dec 2017 06:53:36 GMT
-< X-Cache: 404-HIT
-
-<!doctype html>
-<html>
-<head>
-```
-
-Without any arguments, meg will read paths from a file called `./paths`,
-and hosts from a file called `./hosts`. There will also be no output:
-
-```
-▶ meg
-▶
-```
-
-But it will save an *index* file to `./out/index`:
-
-```
-▶ head -n 2 ./out/index
-out/example.com/538565d7ab544bc3bec5b2f0296783aaec25e756 http://example.com/package.json (404 Not Found)
-out/example.com/20bc94a296f17ce7a4e2daa2946d0dc12128b3f1 http://example.com/.well-known/security.txt (404 Not Found)
-```
-
-You can use the index file to find where the response is stored, but it's
-often easier to find what you're looking for with `grep`:
-
-```
-▶ grep -Hnri '< Server:' out/
-out/example.com/61ac5fbb9d3dd054006ae82630b045ba730d8618:14:< Server: ECS (lga/13A2)
-out/example.com/bd8d9f4c470ffa0e6ec8cfa8ba1c51d62289b6dd:16:< Server: ECS (lga/13A3)
-```
-
-If you want to request just one path, you can specify it directly as an argument:
-
-```
-▶ meg /admin.php
-```
-
 ## Detailed Usage
 
 meg's help output tries to actually be helpful:
@@ -132,21 +93,28 @@ meg's help output tries to actually be helpful:
 Request many paths for many hosts
 
 Usage:
-  meg [options] [path|pathsFile] [hostsFile] [outputDir]
+  meg [path|pathsFile] [hostsFile] [outputDir]
 
 Options:
-  -c, --concurrency <val>    Set the concurrency level (defaut: 20)
-  -d, --delay <val>          Milliseconds between requests to the same host (default: 5000)
+  -b, --body <val>           Set the request body
+  -c, --concurrency <val>    Set the concurrency level (default: 20)
+  -u, --useragent <val>      User agent (optional)
+  -d, --delay <millis>       Milliseconds between requests to the same host (default: 5000)
   -H, --header <header>      Send a custom HTTP header
+  -L, --location             Follow redirects / location header
   -r, --rawhttp              Use the rawhttp library for requests (experimental)
   -s, --savestatus <status>  Save only responses with specific status code
+  -t, --timeout <millis>     Set the HTTP timeout (default: 10000)
   -v, --verbose              Verbose mode
   -X, --method <method>      HTTP method (default: GET)
+  -m, --maxretries <val>       Max number of retry when a request fails (default: 3)
 
 Defaults:
   pathsFile: ./paths
   hostsFile: ./hosts
   outputDir:  ./out
+
+  errorDir:  ./error
 
 Paths file format:
   /robots.txt
@@ -160,10 +128,32 @@ Hosts file format:
 
 Examples:
   meg /robots.txt
-  meg -s 200 -X HEAD
-  meg -c 30 /
-  meg hosts.txt paths.txt output
+  meg paths.txt hosts.txt output
 ```
+
+### Custom User Agent
+
+This fork allows you to specify a custom User-Agent string for your requests using the `-u` or `--useragent` flag. Here's how you can use it:
+
+1. **Basic Usage**:  
+   Run the tool with your desired User-Agent:
+
+   ```bash
+   ▶ meg -u "MyCustomUserAgent/1.0" paths hosts
+   ```
+
+2. **Example**:  
+   If you want to mimic a browser User-Agent, you can use:
+
+   ```bash
+   ▶ meg -u "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" paths hosts
+   ```
+
+3. **Default Behavior**:  
+   If no User-Agent is specified, the tool will use its default User-Agent:
+   ```
+   Mozilla/5.0 (compatible; howhow06-meg/0.2)
+   ```
 
 ### Concurrency
 
@@ -178,6 +168,7 @@ It's not very friendly to keep the concurrency level higher than the number of
 hosts - you may end up sending lots of requests to one host at once.
 
 ### Delay
+
 By default meg will wait 5000 milliseconds between requests to the same host.
 You can override that with the `-d` or `--delay` option:
 
@@ -202,28 +193,6 @@ option:
 ...
 ```
 
-### Raw HTTP (Experimental)
-
-If you want to send requests that aren't valid - for example with invalid URL encoding -
-the Go HTTP client will fail:
-
-```
-▶ meg /%%0a0afoo:bar
-request failed: parse https://example.org/%%0a0afoo:bar: invalid URL escape "%%0"
-```
-
-You can use the `-r` or `--rawhttp` flag to enable use of the [rawhttp](https://github.com/tomnomnom/rawhttp)
-library, which does little to no validation on the request:
-
-```
-▶ meg --verbose --rawhttp /%%0a0afoo:bar
-out/example.com/eac3a4978bfb95992e270c311582e6da4568d83d https://example.com/%%0a0afoo:bar (HTTP/1.1 404 Not Found)
-```
-
-The `rawhttp` library and its use is experimental. Amongst other things it doesn't
-yet support chunked transfer encoding, so you may notice chunk lengths interspersed
-with your output if you use it.
-
 ### Saving Only Certain Status Codes
 
 If you only want to save results that returned a certain status code, you can
@@ -233,14 +202,36 @@ use the `-s` or `--savestatus` option:
 ▶ meg --savestatus 200 /robots.txt
 ```
 
-### Specifying The Method
+---
 
-You can specify which HTTP method to use with the `-X` or `--method` option:
+## Getting Response for a Subdomain
 
-```
-▶ meg --method TRACE
-▶ grep -nri 'TRACE' out/
-out/example.com/61ac5fbb9d3dd054006ae82630b045ba730d8618:3:> TRACE /robots.txt HTTP/1.1
-out/example.com/bd8d9f4c470ffa0e6ec8cfa8ba1c51d62289b6dd:3:> TRACE /.well-known/security.txt HTTP/1.1
-...
-```
+To use the `find_response.sh` script, follow these steps:
+
+1. **Make the Script Executable**: In your terminal, navigate to the directory where you saved the script and run:
+
+   ```bash
+   chmod +x find_response.sh
+   ```
+
+2. **Run the Script**:
+
+   - The script requires at least one parameter (`subdomain`) and an optional second parameter (`output-directory`).
+   - Run the script as follows:
+     ```bash
+     ./find_response.sh "http://example.com" "/path/to/output-directory"
+     ```
+     - Replace `"http://example.com"` with the actual subdomain you want to search.
+     - Replace `"/path/to/output-directory"` with the path to the directory containing the `index` file, or leave it blank to default to `./out`.
+
+3. **Example Usage**:
+
+   - To search for `https://dev-embed.hifiona.com/` in the default `./out` directory:
+     ```bash
+     ./find_response.sh "https://dev-embed.hifiona.com/"
+     ```
+
+4. **Understanding the Output**:
+   - If the subdomain is found in `<output-directory>/index`, the script will output the contents of the first matching file path.
+
+This should execute the script and provide the content of the first match found in the `index` file.

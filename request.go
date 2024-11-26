@@ -14,8 +14,9 @@ type request struct {
 	headers []string
 	body    string
 
-	followLocation bool
-	timeout        time.Duration
+	followLocation  bool
+	timeout         time.Duration
+	customUserAgent string
 }
 
 // Hostname returns the hostname part of the request

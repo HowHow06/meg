@@ -27,6 +27,11 @@ var httpClient = &http.Client{
 
 func goRequest(r request) response {
 	httpClient.Timeout = r.timeout
+	userAgentToUse := userAgent
+
+	if r.customUserAgent != "" {
+		userAgentToUse = r.customUserAgent
+	}
 
 	if !r.followLocation {
 		httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
@@ -53,7 +58,7 @@ func goRequest(r request) response {
 	}
 
 	if !r.HasHeader("User-Agent") {
-		r.headers = append(r.headers, fmt.Sprintf("User-Agent: %s", userAgent))
+		r.headers = append(r.headers, fmt.Sprintf("User-Agent: %s", userAgentToUse))
 	}
 
 	for _, h := range r.headers {

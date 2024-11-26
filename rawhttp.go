@@ -10,6 +10,11 @@ import (
 
 func rawRequest(r request) response {
 	req, err := rawhttp.FromURL(r.method, r.host)
+	userAgentToUse := userAgent
+
+	if r.customUserAgent != "" {
+		userAgentToUse = r.customUserAgent
+	}
 	if err != nil {
 		return response{request: r, err: err}
 	}
@@ -26,7 +31,7 @@ func rawRequest(r request) response {
 	}
 
 	if !r.HasHeader("User-Agent") {
-		r.headers = append(r.headers, fmt.Sprintf("User-Agent: %s", userAgent))
+		r.headers = append(r.headers, fmt.Sprintf("User-Agent: %s", userAgentToUse))
 	}
 
 	for _, h := range r.headers {
