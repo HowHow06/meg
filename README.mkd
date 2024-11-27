@@ -46,14 +46,6 @@ These extensions make the tool more robust and adaptable to different use cases,
 
 Ensure you have [Go](https://golang.org/doc/install) installed and configured on your system before proceeding.
 
-### Install by Directly Installing with Go
-
-If you have Go 1.9 or later installed and configured you can install meg with `go install`:
-
-```
-▶ go install github.com/howhow06/meg@latest
-```
-
 ## Basic Usage
 
 Given a file full of paths:
