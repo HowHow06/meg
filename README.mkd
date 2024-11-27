@@ -226,9 +226,9 @@ To use the `find_response.sh` script, follow these steps:
 
 3. **Example Usage**:
 
-   - To search for `https://dev-embed.hifiona.com/` in the default `./out` directory:
+   - To search for `https://dev.example.com/` in the default `./out` directory:
      ```bash
-     ./find_response.sh "https://dev-embed.hifiona.com/"
+     ./find_response.sh "https://dev.example.com/"
      ```
 
 4. **Understanding the Output**:
@@ -242,10 +242,17 @@ This should execute the script and provide the content of the first match found 
 
 The `extract_information_from_meg_result` Python script processes the output of the `meg` tool and converts it into a structured TSV format for easier analysis. It extracts useful headers (e.g., `Content-Type`, `Content-Length`, `Server`, `Location`) and handles errors. Here's how to use the script:
 
-1. **Prepare the Output Directory**:  
+1. **Install Required Libraries**:  
+   Ensure the required Python libraries are installed. The script requires `pandas`, which can be installed with:
+
+   ```bash
+   pip install pandas
+   ```
+
+2. **Prepare the Output Directory**:  
    Ensure the `meg` output files (e.g., `index`, `error`) are available in the desired directory (default: `out`).
 
-2. **Run the Script**:  
+3. **Run the Script**:  
    Use the script with the `--source_dir` argument to specify the directory containing the `meg` output files:
 
    ```bash
@@ -254,12 +261,12 @@ The `extract_information_from_meg_result` Python script processes the output of 
 
    If `--source_dir` is not specified, it defaults to `out`.
 
-3. **Generated Files**:
+4. **Generated Files**:
 
    - **`subdomains_with_response.tsv`**: A TSV file containing subdomains, their response status, types (`http` or `https`), and extracted headers.
    - **`subdomains_errors.tsv`**: A TSV file listing subdomains that failed, along with their corresponding error statuses.
 
-4. **Example Command**:
+5. **Example Command**:
    If the `meg` output is in the default `out` directory:
 
    ```bash
